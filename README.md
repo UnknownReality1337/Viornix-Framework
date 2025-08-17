@@ -8,7 +8,7 @@
 
 - Easy service creation and initialization  
 - Automatic utility injection for cleaner code  
-- Built-in remote event and function handling with automatic creation  
+- Built-in remote event, function, bindable event, bindable function handling with automatic creation  
 - Promise-based async support  
 - Minimal setup with powerful defaults
 

@@ -3,7 +3,7 @@ local Promise = require(game.ReplicatedStorage.Packages.Promise);
 local RunService = game:GetService("RunService");
 
 local viornix = {}
-local s_version = "Alpha 0.0.5";
+local s_version = "Alpha 0.0.6";
 local CallbackEnabled_Client = false;
 local CallbackEnabled_Server = false;
 local ServicesInitialized_Client = false;
@@ -27,6 +27,10 @@ local InitializedServices = {
 	Server = {};
 };
 local BindEvents = {
+	Client = {},
+	Server = {},
+};
+local BindFuncs = {
 	Client = {},
 	Server = {},
 };
@@ -303,6 +307,126 @@ function viornix:FireEvent(...)
 	end
 end
 
+function viornix:ListenBindableFunction(bindable, callback)
+	if RunService:IsServer() then
+		if not script:FindFirstChild("BindableFuncs_Server") then
+			local binds = Instance.new("Folder", script);
+			binds.Name = "BindableFuncs_Server";
+			if not BindFuncs.Server[bindable] then
+				warn("Bindable Function does not exist on server.. creating one");
+				BindFuncs.Server[bindable] = Instance.new("BindableFunction", script.BindableFuncs_Server);
+				BindFuncs.Server[bindable].Name = bindable;
+				BindFuncs.Server[bindable].OnInvoke = function(...)
+					return callback(...)
+				end
+			else
+				BindFuncs.Server[bindable].OnInvoke = function(...)
+					return callback(...)
+				end
+			end
+		else
+			if not BindFuncs.Server[bindable] then
+				warn("Bindable Function does not exist on server.. creating one");
+				BindFuncs.Server[bindable] = Instance.new("BindableFunction", script.BindableFuncs_Server);
+				BindFuncs.Server[bindable].Name = bindable;
+				BindFuncs.Server[bindable].OnInvoke = function(...)
+					return callback(...)
+				end
+			else
+				BindFuncs.Server[bindable].OnInvoke = function(...)
+					return callback(...)
+				end
+			end
+		end
+	elseif RunService:IsClient() then
+		if not script:FindFirstChild("BindableFuncs_Client") then
+			local binds = Instance.new("Folder", script);
+			binds.Name = "BindableFuncs_Client";
+			if not BindFuncs.Client[bindable] then
+				warn("Bindable Function does not exist on client.. creating one");
+				BindFuncs.Client[bindable] = Instance.new("BindableFunction", script.BindableFuncs_Client);
+				BindFuncs.Client[bindable].Name = bindable;
+				BindFuncs.Client[bindable].OnInvoke = function(...)
+					return callback(...)
+				end
+			else
+				BindFuncs.Client[bindable].OnInvoke = function(...)
+					return callback(...)
+				end
+			end
+		else
+			if not BindFuncs.Client[bindable] then
+				warn("Bindable Function does not exist on client.. creating one");
+				BindFuncs.Client[bindable] = Instance.new("BindableFunction", script.BindableFuncs_Client);
+				BindFuncs.Client[bindable].Name = bindable;
+				BindFuncs.Client[bindable].OnInvoke = function(...)
+					return callback(...)
+				end
+			else
+				BindFuncs.Client[bindable].OnInvoke = function(...)
+					return callback(...)
+				end
+			end
+		end
+	end
+end
+
+function viornix:InvokeBindableFunction(...)
+	local args = {...}
+	local bindable
+	if RunService:IsClient() then
+		bindable = args[1];
+		table.remove(args,  1);
+		
+		if not script:FindFirstChild("BindableFuncs_Client") then
+			local binds = Instance.new("Folder", script);
+			binds.Name = "BindableFuncs_Client";
+			if not BindFuncs.Client[bindable] then
+				warn("Bindable Function does not exist on client.. creating one");
+				BindFuncs.Client[bindable] = Instance.new("BindableFunction", script.BindableFuncs_Client);
+
+				BindFuncs.Client[bindable]:Invoke(unpack(args));
+			else
+				BindFuncs.Client[bindable]:Invoke(unpack(args));
+			end
+		else
+			if not BindFuncs.Client[bindable] then
+				warn("Bindable Function does not exist on client.. creating one");
+				BindFuncs.Client[bindable] = Instance.new("BindableFunction", script.BindableFuncs_Client);
+
+				BindFuncs.Client[bindable]:Invoke(unpack(args));
+			else
+				BindFuncs.Client[bindable]:Invoke(unpack(args));
+			end
+		end
+	elseif RunService:IsServer() then
+		bindable = args[1];
+		table.remove(args,  1);
+
+		if not script:FindFirstChild("BindableFuncs_Server") then
+			local binds = Instance.new("Folder", script);
+			binds.Name = "BindableFuncs_Server";
+			if not BindFuncs.Server[bindable] then
+				warn("Bindable Function does not exist on server.. creating one");
+				BindFuncs.Server[bindable] = Instance.new("BindableFunction", script.BindableFuncs_Server);
+
+				BindFuncs.Server[bindable]:Invoke(unpack(args));
+			else
+				BindFuncs.Server[bindable]:Invoke(unpack(args));
+			end
+		else
+			if not BindFuncs.Server[bindable] then
+				warn("Bindable Function does not exist on server.. creating one");
+				BindFuncs.Server[bindable] = Instance.new("BindableFunction", script.BindableFuncs_Server);
+
+				BindFuncs.Server[bindable]:Invoke(unpack(args));
+			else
+				BindFuncs.Server[bindable]:Invoke(unpack(args));
+			end
+		end
+	end
+end
+
 function viornix:ListenBindableEvent(bindable, callback)
 	if RunService:IsClient() then
 		if not script:FindFirstChild("Bindables_Client") then
@@ -518,62 +642,6 @@ function viornix:AddComponents(path: Folder)
 		end)
 	end
 end
-
---function viornix:InitializeServices()
---	if RunService:IsServer() then
---		return Promise.new(function(resolve, reject, onCancel)
---			for i,v in Services.Server do
---				if v.Initialized == true then
---					reject("Service already initialized");
---				else
---					if onCancel(function() v.Initialized = false end) then
---						return;
---					end
---					local x = require(i)
---					x.ServiceName = i;
---					x.Utilities = Utilities.Server;
---					if x:Init() then
---						v.Initialized = true;
---						InitializedServices.Server[tostring(i)] = x;
---					elseif x:Init() == false then
---						reject("Failed to initialize service, try returning true/false at the end of Init(): " .. tostring(i));
---					else
---						reject("Failed to initialize service: " .. tostring(i));
---					end
---				end
---			end
---			ServicesInitialized_Server = true;
---			print("Viornix version: " .. s_version .. " has successfully initialized all services on the server");
---			resolve();
---		end)
---	elseif RunService:IsClient() then
---		return Promise.new(function(resolve, reject, onCancel)
---			for i,v in Services.Client do
---				if v.Initialized == true then
---					reject("Service already initialized");
---				else
---					if onCancel(function() v.Initialized = false end) then
---						return;
---					end
---					local x = require(i)
---					x.ServiceName = i;
---					x.Utilities = Utilities.Client;
---					if x:Init() then
---						v.Initialized = true;
---						InitializedServices.Client[tostring(i)] = x;
---					elseif x:Init() == false then
---						reject("Failed to initialize service, try returning true/false at the end of Init(): " .. tostring(i));
---					else
---						reject("Failed to initialize service: " .. tostring(i));
---					end
---				end
---			end
---			ServicesInitialized_Client = true;
---			print("Viornix version: " .. s_version .. " has successfully initialized all services on the client");
---			resolve();
---		end)
---	end
---end
 
 function viornix:AddServices(path: Folder, callback: boolean)
 	if RunService:IsClient() then

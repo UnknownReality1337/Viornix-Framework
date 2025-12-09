@@ -1,9 +1,10 @@
 --// Requirements \\--
+
 local Promise = require(game.ReplicatedStorage.Packages.Promise);
 local RunService = game:GetService("RunService");
 
 local viornix = {}
-local s_version = "Alpha 0.0.6";
+local s_version = "Alpha 1.1.3";
 local CallbackEnabled_Client = false;
 local CallbackEnabled_Server = false;
 local ServicesInitialized_Client = false;
@@ -26,524 +27,13 @@ local InitializedServices = {
 	Client = {};
 	Server = {};
 };
-local BindEvents = {
-	Client = {},
-	Server = {},
-};
-local BindFuncs = {
-	Client = {},
-	Server = {},
-};
 
-function viornix:ListenInvoke(func: string, callback)
-	if RunService:IsClient() then
-		return Promise.new(function(resolve, reject, onCancel)
-			if not script:FindFirstChild("RemoteFunctions") then
-				local rems = Instance.new("Folder", script);
-				rems.Name = "RemoteFunctions";
-				if not rems:FindFirstChild(func) then
-					warn("Remote Function does not exist.. creating one");
-					local funcRemote = Instance.new("RemoteFunction", script.RemoteFunctions);
-					funcRemote.Name = func;
-					funcRemote.OnClientInvoke = function(...)
-						return callback(...);
-					end
-				else
-					local funcRemote = script.RemoteFunctions:FindFirstChild(func);
-					funcRemote.OnClientInvoke = function(...)
-						return callback(...);
-					end
-				end
-			else
-				if not script.RemoteFunctions:FindFirstChild(func) then
-					warn("Remote Function does not exist.. creating one");
-					local funcRemote = Instance.new("RemoteFunction", script.RemoteFunctions);
-					funcRemote.Name = func;
-					funcRemote.OnClientInvoke = function(...)
-						return callback(...);
-					end
-				else
-					local funcRemote = script.RemoteFunctions:FindFirstChild(func);
-					funcRemote.OnClientInvoke = function(...)
-						return callback(...);
-					end
-				end
-			end
-		end)
-	elseif RunService:IsServer() then
-		return Promise.new(function(resolve, reject, onCancel)
-			if not script:FindFirstChild("RemoteFunctions") then
-				local rems = Instance.new("Folder", script);
-				rems.Name = "RemoteFunctions";
-				if not rems:FindFirstChild(func) then
-					warn("Remote Function does not exist.. creating one");
-					local funcRemote = Instance.new("RemoteFunction", script.RemoteFunctions);
-					funcRemote.Name = func;
-					funcRemote.OnServerInvoke = function(...)
-						return callback(...);
-					end
-				else
-					local funcRemote = script.RemoteFunctions:FindFirstChild(func);
-					funcRemote.OnServerInvoke = function(...)
-						return callback(...);
-					end
-				end
-			else
-				if not script.RemoteFunctions:FindFirstChild(func) then
-					warn("Remote Function does not exist.. creating one");
-					local funcRemote = Instance.new("RemoteFunction", script.RemoteFunctions);
-					funcRemote.Name = func;
-					funcRemote.OnServerInvoke = function(...)
-						return callback(...);
-					end
-				else
-					local funcRemote = script.RemoteFunctions:FindFirstChild(func);
-					funcRemote.OnServerInvoke = function(...)
-						return callback(...);
-					end
-				end
-			end
-		end)
-	end
-end
-
-function viornix:Invoke(...)
-	local args = {...}
-	local func, player
-
-	if RunService:IsClient() then
-		func = args[1];
-		table.remove(args,  1);
-
-		if not script:FindFirstChild("RemoteFunctions") then
-			local rems = Instance.new("Folder", script);
-			rems.Name = "RemoteFunctions";
-			if not script.RemoteFunctions:FindFirstChild(func) then
-				warn("Remote Function does not exist.. creating one");
-				local rem = Instance.new("RemoteFunction", script.RemoteFunctions);
-				rem.Name = func;
-				return rem:InvokeServer({...});
-			else
-				local rem = script.RemoteFunctions:FindFirstChild(func);
-				return rem:InvokeServer({...});
-			end
-		else
-			if not script.RemoteFunctions:FindFirstChild(func) then
-				warn("Remote Function does not exist.. creating one");
-				local rem = Instance.new("RemoteFunction", script.RemoteFunctions);
-				rem.Name = func;
-				return rem:InvokeServer({...});
-			else
-				local rem = script.RemoteFunctions:FindFirstChild(func);
-				return rem:InvokeServer({...});
-			end
-		end
-	elseif RunService:IsServer() then
-		if typeof(args[1]) == "Instance" and args[1]:IsA("Player") then
-			player = table.remove(args, 1)
-		end
-		func = args[1];
-		table.remove(args,  1);
-
-		if not script:FindFirstChild("RemoteFunctions") then
-			local rems = Instance.new("Folder", script);
-			rems.Name = "RemoteFunctions";
-			if not script.RemoteFunctions:FindFirstChild(func) then
-				warn("Remote Function does not exist.. creating one");
-				local rem = Instance.new("RemoteFunction", script.RemoteFunctions);
-				rem.Name = func;
-				return rem:InvokeClient(player, {...});
-			else
-				local rem = script.RemoteFunctions:FindFirstChild(func);
-				return rem:InvokeClient(player, {...});
-			end
-		else
-			if not script.RemoteFunctions:FindFirstChild(func) then
-				warn("Remote Function does not exist.. creating one");
-				local rem = Instance.new("RemoteFunction", script.RemoteFunctions);
-				rem.Name = func;
-				return rem:InvokeClient(player, {...});
-			else
-				local rem = script.RemoteFunctions:FindFirstChild(func);
-				return rem:InvokeClient(player, {...});
-			end
-		end
-	end
-end
-
-function viornix:ListenEvent(event, callback)
-	if RunService:IsClient() then
-		if not script:FindFirstChild("RemoteEvents") then
-			local rems = Instance.new("Folder", script);
-			rems.Name = "RemoteEvents";
-
-			if not script:FindFirstChild("RemoteEvents"):FindFirstChild(event) then
-				warn("Remote Event does not exist.. creating one");
-				local ev = Instance.new("RemoteEvent", script.RemoteEvents);
-				ev.Name = event;
-				ev.OnClientEvent:Connect(function(...)
-					return callback(...)
-				end)
-			else
-				local ev = script.RemoteEvents:FindFirstChild(event);
-				ev.OnClientEvent:Connect(function(...)
-					return callback(...)
-				end)
-			end
-		else
-			if not script:FindFirstChild("RemoteEvents"):FindFirstChild(event) then
-				warn("Remote Event does not exist.. creating one");
-				local ev = Instance.new("RemoteEvent", script.RemoteEvents);
-				ev.Name = event;
-				ev.OnClientEvent:Connect(function(...)
-					return callback(...)
-				end)
-			else
-				local ev = script.RemoteEvents:FindFirstChild(event);
-				ev.OnClientEvent:Connect(function(...)
-					return callback(...)
-				end)
-			end
-		end
-	elseif RunService:IsServer() then
-		if not script:FindFirstChild("RemoteEvents") then
-			local rems = Instance.new("Folder", script);
-			rems.Name = "RemoteEvents";
-
-			if not script:FindFirstChild("RemoteEvents"):FindFirstChild(event) then
-				warn("Remote Event does not exist.. creating one");
-				local ev = Instance.new("RemoteEvent", script.RemoteEvents);
-				ev.Name = event;
-				ev.OnServerEvent:Connect(function(...)
-					return callback(...)
-				end)
-			else
-				local ev = script.RemoteEvents:FindFirstChild(event);
-				ev.OnServerEvent:Connect(function(...)
-					return callback(...)
-				end)
-			end
-		else
-			if not script:FindFirstChild("RemoteEvents"):FindFirstChild(event) then
-				warn("Remote Event does not exist.. creating one");
-				local ev = Instance.new("RemoteEvent", script.RemoteEvents);
-				ev.Name = event;
-				ev.OnServerEvent:Connect(function(...)
-					return callback(...)
-				end)
-			else
-				local ev = script.RemoteEvents:FindFirstChild(event);
-				ev.OnServerEvent:Connect(function(...)
-					return callback(...)
-				end)
-			end
-		end
-	end
-end
-
-function viornix:FireEvent(...)
-	local args = {...}
-	local event, player
-	if RunService:IsClient() then
-		event = args[1];
-		table.remove(args,  1);
-
-		if not script:FindFirstChild("RemoteEvents") then
-			local rems = Instance.new("Folder", script);
-			rems.Name = "RemoteEvents";
-
-			if not script:FindFirstChild("RemoteEvents"):FindFirstChild(event) then
-				warn("Remote Event does not exist.. creating one");
-				local ev = Instance.new("RemoteEvent", script.RemoteEvents);
-				ev.Name = event;
-				ev:FireServer(unpack(args));
-			else
-				local ev = script.RemoteEvents:FindFirstChild(event);
-				ev:FireServer(unpack(args));
-			end
-		else
-			if not script:FindFirstChild("RemoteEvents"):FindFirstChild(event) then
-				warn("Remote Event does not exist.. creating one");
-				local ev = Instance.new("RemoteEvent", script.RemoteEvents);
-				ev.Name = event;
-				ev:FireServer(unpack(args));
-			else
-				local ev = script.RemoteEvents:FindFirstChild(event);
-				ev:FireServer(unpack(args));
-			end
-		end
-	elseif RunService:IsServer() then
-		if typeof(args[1]) == "Instance" and args[1]:IsA("Player") then
-			player = args[1]
-			table.remove(args, 1)
-		end
-		event = args[1];
-		table.remove(args,  1);
-
-		if not script:FindFirstChild("RemoteEvents") then
-			local rems = Instance.new("Folder", script);
-			rems.Name = "RemoteEvents";
-
-			if not script:FindFirstChild("RemoteEvents"):FindFirstChild(event) then
-				warn("Remote Event does not exist.. creating one");
-				local ev = Instance.new("RemoteEvent", script.RemoteEvents);
-				ev.Name = event;
-				ev:FireClient(player, unpack(args));
-			else
-				local ev = script.RemoteEvents:FindFirstChild(event);
-				ev:FireClient(player, unpack(args));
-			end
-		else
-			if not script:FindFirstChild("RemoteEvents"):FindFirstChild(event) then
-				warn("Remote Event does not exist.. creating one");
-				local ev = Instance.new("RemoteEvent", script.RemoteEvents);
-				ev.Name = event;
-				ev:FireClient(player, unpack(args));
-			else
-				local ev = script.RemoteEvents:FindFirstChild(event);
-				ev:FireClient(player, unpack(args));
-			end
-		end
-	end
-end
-
-function viornix:ListenBindableFunction(bindable, callback)
+function viornix:SetupNetworking(packages: Folder)
 	if RunService:IsServer() then
-		if not script:FindFirstChild("BindableFuncs_Server") then
-			local binds = Instance.new("Folder", script);
-			binds.Name = "BindableFuncs_Server";
-			if not BindFuncs.Server[bindable] then
-				warn("Bindable Function does not exist on server.. creating one");
-				BindFuncs.Server[bindable] = Instance.new("BindableFunction", script.BindableFuncs_Server);
-				BindFuncs.Server[bindable].Name = bindable;
-				BindFuncs.Server[bindable].OnInvoke = function(...)
-					return callback(...)
-				end
-			else
-				BindFuncs.Server[bindable].OnInvoke = function(...)
-					return callback(...)
-				end
-			end
-		else
-			if not BindFuncs.Server[bindable] then
-				warn("Bindable Function does not exist on server.. creating one");
-				BindFuncs.Server[bindable] = Instance.new("BindableFunction", script.BindableFuncs_Server);
-				BindFuncs.Server[bindable].Name = bindable;
-				BindFuncs.Server[bindable].OnInvoke = function(...)
-					return callback(...)
-				end
-			else
-				BindFuncs.Server[bindable].OnInvoke = function(...)
-					return callback(...)
-				end
-			end
-		end
+		self.Networking = require(packages.Networking);
+		self.Networking:InitNetworking();
 	elseif RunService:IsClient() then
-		if not script:FindFirstChild("BindableFuncs_Client") then
-			local binds = Instance.new("Folder", script);
-			binds.Name = "BindableFuncs_Client";
-			if not BindFuncs.Client[bindable] then
-				warn("Bindable Function does not exist on client.. creating one");
-				BindFuncs.Client[bindable] = Instance.new("BindableFunction", script.BindableFuncs_Client);
-				BindFuncs.Client[bindable].Name = bindable;
-				BindFuncs.Client[bindable].OnInvoke = function(...)
-					return callback(...)
-				end
-			else
-				BindFuncs.Client[bindable].OnInvoke = function(...)
-					return callback(...)
-				end
-			end
-		else
-			if not BindFuncs.Client[bindable] then
-				warn("Bindable Function does not exist on client.. creating one");
-				BindFuncs.Client[bindable] = Instance.new("BindableFunction", script.BindableFuncs_Client);
-				BindFuncs.Client[bindable].Name = bindable;
-				BindFuncs.Client[bindable].OnInvoke = function(...)
-					return callback(...)
-				end
-			else
-				BindFuncs.Client[bindable].OnInvoke = function(...)
-					return callback(...)
-				end
-			end
-		end
-	end
-end
-
-function viornix:InvokeBindableFunction(...)
-	local args = {...}
-	local bindable
-	if RunService:IsClient() then
-		bindable = args[1];
-		table.remove(args,  1);
-		
-		if not script:FindFirstChild("BindableFuncs_Client") then
-			local binds = Instance.new("Folder", script);
-			binds.Name = "BindableFuncs_Client";
-			if not BindFuncs.Client[bindable] then
-				warn("Bindable Function does not exist on client.. creating one");
-				BindFuncs.Client[bindable] = Instance.new("BindableFunction", script.BindableFuncs_Client);
-
-				BindFuncs.Client[bindable]:Invoke(unpack(args));
-			else
-				BindFuncs.Client[bindable]:Invoke(unpack(args));
-			end
-		else
-			if not BindFuncs.Client[bindable] then
-				warn("Bindable Function does not exist on client.. creating one");
-				BindFuncs.Client[bindable] = Instance.new("BindableFunction", script.BindableFuncs_Client);
-
-				BindFuncs.Client[bindable]:Invoke(unpack(args));
-			else
-				BindFuncs.Client[bindable]:Invoke(unpack(args));
-			end
-		end
-	elseif RunService:IsServer() then
-		bindable = args[1];
-		table.remove(args,  1);
-
-		if not script:FindFirstChild("BindableFuncs_Server") then
-			local binds = Instance.new("Folder", script);
-			binds.Name = "BindableFuncs_Server";
-			if not BindFuncs.Server[bindable] then
-				warn("Bindable Function does not exist on server.. creating one");
-				BindFuncs.Server[bindable] = Instance.new("BindableFunction", script.BindableFuncs_Server);
-
-				BindFuncs.Server[bindable]:Invoke(unpack(args));
-			else
-				BindFuncs.Server[bindable]:Invoke(unpack(args));
-			end
-		else
-			if not BindFuncs.Server[bindable] then
-				warn("Bindable Function does not exist on server.. creating one");
-				BindFuncs.Server[bindable] = Instance.new("BindableFunction", script.BindableFuncs_Server);
-
-				BindFuncs.Server[bindable]:Invoke(unpack(args));
-			else
-				BindFuncs.Server[bindable]:Invoke(unpack(args));
-			end
-		end
-	end
-end
-
-function viornix:ListenBindableEvent(bindable, callback)
-	if RunService:IsClient() then
-		if not script:FindFirstChild("Bindables_Client") then
-			local binds = Instance.new("Folder", script);
-			binds.Name = "Bindables_Client";
-
-			if not BindEvents.Client[bindable] then
-				warn("Bindable Event does not exist.. creating one");
-				BindEvents.Client[bindable] = Instance.new("BindableEvent", script.Bindables_Client);
-
-				BindEvents.Client[bindable].Event:Connect(function(...)
-					return callback(...)
-				end)
-			else
-				BindEvents.Client[bindable].Event:Connect(function(...)
-					return callback(...)
-				end)
-			end	
-		else
-			if not BindEvents.Client[bindable] then
-				warn("Bindable Event does not exist.. creating one");
-				BindEvents.Client[bindable] = Instance.new("BindableEvent", script.Bindables_Client);
-
-				BindEvents.Client[bindable].Event:Connect(function(...)
-					return callback(...)
-				end)
-			else
-				BindEvents.Client[bindable].Event:Connect(function(...)
-					return callback(...)
-				end)
-			end
-		end
-	elseif RunService:IsServer() then
-		if not script:FindFirstChild("Bindables_Server") then
-			local binds = Instance.new("Folder", script);
-			binds.Name = "Bindables_Server";
-
-			if not BindEvents.Server[bindable] then
-				warn("Bindable Event does not exist.. creating one");
-				BindEvents.Server[bindable] = Instance.new("BindableEvent", script.Bindables_Server);
-
-				BindEvents.Server[bindable].Event:Connect(function(...)
-					return callback(...)
-				end)
-			else
-				BindEvents.Server[bindable].Event:Connect(function(...)
-					return callback(...)
-				end)
-			end	
-		else
-			if not BindEvents.Server[bindable] then
-				warn("Bindable Event does not exist.. creating one");
-				BindEvents.Server[bindable] = Instance.new("BindableEvent", script.Bindables_Server);
-
-				BindEvents.Server[bindable].Event:Connect(function(...)
-					return callback(...)
-				end)
-			else
-				BindEvents.Server[bindable].Event:Connect(function(...)
-					return callback(...)
-				end)
-			end
-		end
-	end
-end
-
-function viornix:FireBindableEvent(...)
-	local args = {...}
-	local bindable
-	if RunService:IsClient() then
-		bindable = args[1];
-		table.remove(args, 1)
-		if not script:FindFirstChild("Bindables_Client") then
-			local binds = Instance.new("Folder", script);
-			binds.Name = "Bindables_Client";
-			if not BindEvents.Client[bindable] then
-				warn("Bindable Event does not exist on client.. creating one");
-				BindEvents.Client[bindable] = Instance.new("BindableEvent", script.Bindables_Client);
-
-				BindEvents.Client[bindable]:Fire(unpack(args));
-			else
-				BindEvents.Client[bindable]:Fire(unpack(args));
-			end
-		else
-			if not BindEvents.Client[bindable] then
-				warn("Bindable Event does not exist on client.. creating one");
-				BindEvents.Client[bindable] = Instance.new("BindableEvent", script.Bindables_Client);
-
-				BindEvents.Client[bindable]:Fire(unpack(args));
-			else
-				BindEvents.Client[bindable]:Fire(unpack(args));
-			end
-		end
-	elseif RunService:IsServer() then
-		bindable = args[1];
-		table.remove(args, 1)
-		if not script:FindFirstChild("Bindables_Server") then
-			local binds = Instance.new("Folder", script);
-			binds.Name = "Bindables_Server";
-			if not BindEvents.Server[bindable] then
-				warn("Bindable Event does not exist on client.. creating one");
-				BindEvents.Server[bindable] = Instance.new("BindableEvent", script.Bindables_Server);
-
-				BindEvents.Server[bindable]:Fire(unpack(args));
-			else
-				BindEvents.Server[bindable]:Fire(unpack(args));
-			end
-		else
-			if not BindEvents.Server[bindable] then
-				warn("Bindable Event does not exist on client.. creating one");
-				BindEvents.Server[bindable] = Instance.new("BindableEvent", script.Bindables_Server);
-
-				BindEvents.Server[bindable]:Fire(unpack(args));
-			else
-				BindEvents.Server[bindable]:Fire(unpack(args));
-			end
-		end
+		self.Networking = require(packages.Networking);
 	end
 end
 
@@ -768,7 +258,7 @@ function viornix:CreateService(serviceName: string, extraParams: table)
 						serviceTable[v] = viornix:GetService(v);
 					end
 					Service.Services = serviceTable;
-					print("Set services in", serviceName, Service.Services);
+					--print("Set services in", serviceName, Service.Services);
 				end
 				if extraParams.Utilities ~= nil then
 					local utilityTable = {};
@@ -776,7 +266,7 @@ function viornix:CreateService(serviceName: string, extraParams: table)
 						utilityTable[v] = viornix:GetUtility(v);
 					end
 					Service.Utilities = utilityTable;
-					print("Set utilities in", serviceName, Service.Utilities);
+					--print("Set utilities in", serviceName, Service.Utilities);
 				end
 			end
 		end
@@ -788,7 +278,7 @@ function viornix:CreateService(serviceName: string, extraParams: table)
 			service = Service;
 		};
 
-		print(serviceName, "Intialized", Services.Client[serviceName])
+		--print(serviceName, "Intialized", Services.Client[serviceName])
 		return Service;
 	elseif RunService:IsServer() then
 		local Service = {}
@@ -804,7 +294,7 @@ function viornix:CreateService(serviceName: string, extraParams: table)
 						serviceTable[v] = viornix:GetService(v);
 					end
 					Service.Services = serviceTable;
-					print("Set services in", serviceName, Service.Services);
+					--print("Set services in", serviceName, Service.Services);
 				end
 				if extraParams.Utilities ~= nil then
 					local utilityTable = {};
@@ -812,7 +302,7 @@ function viornix:CreateService(serviceName: string, extraParams: table)
 						utilityTable[v] = viornix:GetUtility(v);
 					end
 					Service.Utilities = utilityTable;
-					print("Set utilities in", serviceName, Service.Utilities);
+					--print("Set utilities in", serviceName, Service.Utilities);
 				end
 			end
 		end
@@ -824,7 +314,7 @@ function viornix:CreateService(serviceName: string, extraParams: table)
 			service = Service;
 		};
 
-		print(serviceName, "Intialized", Services.Server[serviceName])
+		--print(serviceName, "Intialized", Services.Server[serviceName])
 		return Service;
 	end
 end

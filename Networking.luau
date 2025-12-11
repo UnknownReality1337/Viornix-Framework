@@ -94,18 +94,18 @@ function Networking:InvokeBindableFunction(...)
 				warn("Bindable Function does not exist on client.. creating one");
 				Networking.BindableFunctions.Client[bindable] = Instance.new("BindableFunction", script.BindableFuncs_Client);
 
-				Networking.BindableFunctions.Client[bindable]:Invoke(unpack(args));
+				return Networking.BindableFunctions.Client[bindable]:Invoke(unpack(args));
 			else
-				Networking.BindableFunctions.Client[bindable]:Invoke(unpack(args));
+				return Networking.BindableFunctions.Client[bindable]:Invoke(unpack(args));
 			end
 		else
 			if not Networking.BindableFunctions.Client[bindable] then
 				warn("Bindable Function does not exist on client.. creating one");
 				Networking.BindableFunctions.Client[bindable] = Instance.new("BindableFunction", script.BindableFuncs_Client);
 
-				Networking.BindableFunctions.Client[bindable]:Invoke(unpack(args));
+				return Networking.BindableFunctions.Client[bindable]:Invoke(unpack(args));
 			else
-				Networking.BindableFunctions.Client[bindable]:Invoke(unpack(args));
+				return Networking.BindableFunctions.Client[bindable]:Invoke(unpack(args));
 			end
 		end
 	elseif RunService:IsServer() then
@@ -119,18 +119,18 @@ function Networking:InvokeBindableFunction(...)
 				warn("Bindable Function does not exist on server.. creating one");
 				Networking.BindableFunctions.Server[bindable] = Instance.new("BindableFunction", script.BindableFuncs_Server);
 
-				Networking.BindableFunctions.Server[bindable]:Invoke(unpack(args));
+				return Networking.BindableFunctions.Server[bindable]:Invoke(unpack(args));
 			else
-				Networking.BindableFunctions.Server[bindable]:Invoke(unpack(args));
+				return Networking.BindableFunctions.Server[bindable]:Invoke(unpack(args));
 			end
 		else
 			if not Networking.BindableFunctions.Server[bindable] then
 				warn("Bindable Function does not exist on server.. creating one");
 				Networking.BindableFunctions.Server[bindable] = Instance.new("BindableFunction", script.BindableFuncs_Server);
 
-				Networking.BindableFunctions.Server[bindable]:Invoke(unpack(args));
+				return Networking.BindableFunctions.Server[bindable]:Invoke(unpack(args));
 			else
-				Networking.BindableFunctions.Server[bindable]:Invoke(unpack(args));
+				return Networking.BindableFunctions.Server[bindable]:Invoke(unpack(args));
 			end
 		end
 	end
@@ -292,12 +292,12 @@ function Networking:ListenRemoteFunction(func: string, callback: (... any) -> ()
 	if RunService:IsClient() then
 		return Promise.new(function(resolve, reject, onCancel)
 			local remoteFunction = createFunction(func)
-			
+
 			if not remoteFunction then
 				reject("Catastrophic failure with remote function retrieval.")
 				return;
 			end
-			
+
 			remoteFunction.OnClientInvoke = function(...)
 				return callback(...);
 			end
@@ -323,39 +323,39 @@ end
 function Networking:FireEvent(...) : any
 	local args = {...}
 	local event, player
-	
+
 	if RunService:IsClient() then
 		event = args[1];
 		table.remove(args,  1);
-		
+
 		local RemoteEvent = createEvent(event);
-		
+
 		if not RemoteEvent then
 			warn("Catastrophic failure with remote event creation.");
 			return;
 		end
-		
+
 		RemoteEvent:FireServer(unpack(args));
 		return;
 	elseif RunService:IsServer() then
 		if typeof(args[1]) == "Instance" and args[1]:IsA("Player") then
 			player = table.remove(args, 1);
 		end
-		
+
 		event = args[1];
 		table.remove(args, 1);
-		
+
 		local RemoteEvent = createEvent(event);
-		
+
 		if not RemoteEvent then
 			warn("Catastrophic failure with remote event creation.");
 			return;
 		end
-		
+
 		if not player then
 			return;
 		end
-		
+
 		RemoteEvent:FireClient(player, unpack(args));
 		return;
 	else
@@ -366,38 +366,38 @@ end
 function Networking:InvokeRemote(...) : any
 	local args = {...};
 	local func, player;
-	
+
 	if RunService:IsClient() then
 		func = args[1];
 		table.remove(args, 1);
-		
+
 		local RemoteFunction = createFunction(func);
-		
+
 		if not RemoteFunction then
 			warn("Catastrophic failure with remote function creation.");
 			return;
 		end
-		
+
 		return RemoteFunction:InvokeServer(unpack(args));
 	elseif RunService:IsServer() then
 		if typeof(args[1]) == "Instance" and args[1]:IsA("Player") then
 			player = table.remove(args, 1);
 		end
-		
+
 		func = args[1];
 		table.remove(args, 1);
-		
+
 		local RemoteFunction = createFunction(func);
-		
+
 		if not RemoteFunction then
 			warn("Catastrophic failure with remote function creation.");
 			return;
 		end
-		
+
 		if not player then
 			return;
 		end
-		
+
 		return RemoteFunction:InvokeClient(player, unpack(args));
 	else
 		return nil;
@@ -419,7 +419,7 @@ function createEvent(name: string) : RemoteEvent?
 			local rems = Instance.new("Folder", script);
 			rems.Name = "Comm";
 		end
-		
+
 		if script.Comm:FindFirstChild(name) and not script.Comm:FindFirstChild(name):IsA("RemoteEvent") then
 			warn("Remote Event name already exists as a RemoteFunction, try changing name before trying again.")
 			return;
@@ -478,64 +478,55 @@ function createCreationRemote() : RemoteFunction?
 	else
 		rems = script:FindFirstChild("Comm");
 	end
-	
+
 	if not rems:FindFirstChild("CreationRemote") then
 		local newRemote = Instance.new("RemoteFunction", rems);
 		newRemote.Name = "CreationRemote";
-		
+
 		if newRemote and newRemote:IsA("RemoteFunction") then
 			return newRemote;
 		end
 	elseif rems:FindFirstChild("CreationRemote") then
 		local rems = script:FindFirstChild("Comm");
 		local newRemote = rems:FindFirstChild("CreationRemote")
-		
+
 		if newRemote and newRemote:IsA("RemoteFunction") then
 			return newRemote;
 		end
 	end
-	
+
 	return nil;
 end
 
-function Networking:InitNetworking(rateLimit: number, maxRemotes: number)
+function Networking:InitNetworking()
 	if RunService:IsClient() then
 		return Promise.new(function(resolve, reject, onCancel)
 			reject("This is a server only function.")
 		end)
 	end
-	
-	if rateLimit ~= nil then
-		Networking.RateLimit = rateLimit
-	else
-		Networking.RateLimit = 60
-	end
-	
-	if maxRemotes ~= nil then
-		Networking.MaxRemotes = maxRemotes
-	else
-		Networking.MaxRemotes = 100
-	end
-	
+
 	local creationRemote = createCreationRemote()
-	
+
 	if not creationRemote then
 		return Promise.new(function(resolve, reject, onCancel)
 			reject("Creation remote failed to be created.")
 		end)
 	end
-	
+
 	creationRemote.OnServerInvoke = function(player, remoteName, remoteType)
+		if not Networking.RateLimits[player] then
+			Networking.RateLimits[player] = 0
+		end
 		if Networking.RateLimits[player] >= Networking.RateLimit or Networking.MaxRemotes <= #script.Comm:GetChildren() then
 			warn("Player "..player.Name.." has been rate limited, wait for the queue to clear.")
 			return
 		end
-		
+
 		Networking.RateLimits[player] += 1
 		task.delay(1, function()
 			Networking.RateLimits[player] -= 1
 		end)
-		
+
 		if remoteType == "RemoteEvent" then
 			return createEvent(remoteName)
 		elseif remoteType == "RemoteFunction" then

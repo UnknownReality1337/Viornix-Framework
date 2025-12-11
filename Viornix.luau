@@ -27,23 +27,31 @@ local InitializedServices = {
 	Client = {};
 	Server = {};
 };
+viornix.ClientSetup = false;
+viornix.ServerSetup = false;
 
-function viornix:SetupNetworking(packages: Folder)
+function viornix:SetupNetworking(packages: Folder, yield: boolean)
 	if RunService:IsServer() then
-		self.Networking = require(packages.Networking);
-		self.Networking:InitNetworking();
+		self.Networking = require(packages:WaitForChild("Networking"));
+		self.Networking:InitNetworking(60, 100);
 	elseif RunService:IsClient() then
-		self.Networking = require(packages.Networking);
+		self.Networking = require(packages:WaitForChild("Networking"));
 	end
 end
 
 function viornix:GetService(service: string)
 	if RunService:IsServer() then
+		if self.ServerSetup ~= true then
+			repeat task.wait() until self.ServerSetup == true;
+		end
 		if InitializedServices.Server[service] then
 			return InitializedServices.Server[service]
 		end
 		error("Could not find service '" .. service .. "'! Make sure the service name is correct before trying again.")
 	elseif RunService:IsClient() then
+		if self.ClientSetup ~= true then
+			repeat task.wait() until self.ClientSetup == true;
+		end
 		if InitializedServices.Client[service] then
 			return InitializedServices.Client[service]
 		end
@@ -197,7 +205,8 @@ function viornix:InitializeServices()
 					reject("CRITICAL ERROR:" .. i .." does not have an Start() function.")
 				end
 			end
-
+			
+			self.ClientSetup = true;
 			print("Successfully Started All Services.");
 			resolve()
 		end)
@@ -236,7 +245,8 @@ function viornix:InitializeServices()
 					reject("CRITICAL ERROR:" .. i .." does not have an Start() function.")
 				end
 			end
-
+			
+			self.ServerSetup = true;
 			print("Successfully Started All Services.");
 			resolve()
 		end)
